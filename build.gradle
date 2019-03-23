@@ -1,0 +1,16 @@
+plugins {
+    id 'scala'
+}
+
+group 'com.github.natanbc'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.8'
+}
