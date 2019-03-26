@@ -19,7 +19,8 @@ object WebServer extends LazyLogging {
   def main(args: Array[String]) {
     configureLogging()
     
-    val config = ConfigFactory.load()
+    val config = ConfigFactory.systemEnvironment()
+      .withFallback(ConfigFactory.load())
     val index = Source.fromResource("index.html").mkString
     implicit val system = ActorSystem("system", config)
     implicit val materializer = ActorMaterializer()
