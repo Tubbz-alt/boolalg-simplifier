@@ -1,7 +1,10 @@
 plugins {
     id 'scala'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 
+mainClassName = 'com.github.natanbc.boolalg.Main'
 group 'com.github.natanbc'
 version '1.0-SNAPSHOT'
 
@@ -13,4 +16,20 @@ repositories {
 
 dependencies {
     compile 'org.scala-lang:scala-library:2.12.8'
+    compile 'com.typesafe.akka:akka-stream_2.12:2.5.21'
+    compile 'com.typesafe.akka:akka-http_2.12:10.1.7'
+    compile 'com.typesafe.akka:akka-http-spray-json_2.12:10.1.7'
+
+    compile 'com.typesafe.akka:akka-slf4j_2.12:2.5.21'
+    compile 'com.typesafe.scala-logging:scala-logging_2.12:3.9.2'
+    compile 'org.slf4j:slf4j-jdk14:1.7.26'
+    
+    compileOnly 'com.oracle.substratevm:svm:1.0.0-rc12'
+}
+
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+shadowJar {
+    transform(AppendingTransformer) {
+        resource = 'reference.conf'
+    }
 }

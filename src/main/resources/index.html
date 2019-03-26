@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Boolean Algebra</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="charset" content="utf-8">
+    </head>
+    <body>
+        <label for="input">Expression:</label>
+        <input type="text" id="input">
+        <button id="button">Simplify</button>
+        <div id="status"></div>
+        <div id="entries"></div>
+        <script>
+            function span(text) {
+                const v = document.createElement("span");
+                v.classList.add("node-text");
+                v.innerText = String(text);
+                return v;
+            }
+
+            const factories = {
+                INPUT: (base, {name}) => {
+                    base.appendChild(span(name));
+                },
+                CONST: (base, {value}) => {
+                    base.appendChild(span(value));
+                },
+                NOT: (base, {value}) => {
+                    base.appendChild(span("!"));
+                    base.appendChild(createNode(value));
+                },
+                OR: (base, {values}) => {
+                    base.appendChild(span("("));
+                    for(let i = 0; i < values.length; i++) {
+                        if(i > 0) {
+                            base.appendChild(span(" + "));
+                        }
+                        base.appendChild(createNode(values[i]));
+                    }
+                    base.appendChild(span(")"));
+                },
+                AND: (base, {values}) => {
+                    base.appendChild(span("("));
+                    for(let i = 0; i < values.length; i++) {
+                        if(i > 0) {
+                            base.appendChild(span(" * "));
+                        }
+                        base.appendChild(createNode(values[i]));
+                    }
+                    base.appendChild(span(")"));
+                }
+            };
+
+            function createNode(d) {
+                const v = document.createElement("div");
+                v.classList.add("node", "node-" + d.type.toLowerCase());
+                v.setAttribute("id", d.id);
+                factories[d.type](v, d);
+                v.ontouchstart = v.onmouseover = function(e) {
+                    e.stopPropagation();
+                    document.querySelectorAll(".node").forEach(n => {
+                        if(parseInt(n.getAttribute("id")) === d.id) {
+                            n.classList.add("selected")
+                        }
+                    })
+                };
+                v.ontouchend = v.onmouseout = function() {
+                    document.querySelectorAll(".node").forEach(n => {
+                        n.classList.remove("selected")
+                    })
+                };
+                return v;
+            }
+
+            function nodeWithText(...parts) {
+                const v = document.createElement("div");
+                for(const part of parts) {
+                    if(typeof part === "string") {
+                        v.appendChild(span(part));
+                    } else {
+                        v.appendChild(createNode(part));
+                    }
+                }
+                return v;
+            }
+
+            function createStep({from, to, reason}) {
+                return nodeWithText("From ", from, " to ", to, " by " + reason)
+            }
+
+            document.getElementById("button").onclick = function() {
+                const params = new URLSearchParams();
+                params.append("expression", document.getElementById("input").value);
+                fetch("/simplify?" + params.toString()).then(r => r.json()).then(data => {
+                    console.log(data);
+                    if(data.error) {
+                        throw new Error(data.error);
+                    }
+                    document.getElementById("status").innerText = "";
+                    const target = document.getElementById("entries");
+                    while(target.firstChild) {
+                        target.removeChild(target.firstChild);
+                    }
+                    target.appendChild(nodeWithText("Start = ", data.start));
+                    data.steps.forEach(step => target.appendChild(createStep(step)));
+                    target.appendChild(nodeWithText("End = ", data.end));
+                }).catch(e => document.getElementById("status").innerText = e)
+            }
+        </script>
+        <style>
+            .node {
+                display: inline-block;
+            }
+
+            .selected {
+                background-color: red;
+            }
+        </style>
+    </body>
+</html>

@@ -1,0 +1,2 @@
+#!/bin/bash
+native-image -H:IncludeResources=index.html -H:IncludeResources=.*conf -H:IncludeResources=.*\.properties -H:ReflectionConfigurationFiles=graal/reflectconf-akka.json -H:ReflectionConfigurationFiles=graal/reflectconf-jul.json --enable-url-protocols=https,http --rerun-class-initialization-at-runtime=com.typesafe.config.impl.ConfigImpl$EnvVariablesHolder,com.typesafe.config.impl.ConfigImpl$SystemPropertiesHolder "$@"
