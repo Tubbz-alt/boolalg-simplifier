@@ -2,7 +2,10 @@ package com.github.natanbc.boolalg.parser
 
 import java.io.PushbackReader
 
+import scala.collection.mutable
+
 class Lexer(r: PushbackReader) {
+  private val lineMap = new mutable.HashMap[Int, mutable.StringBuilder]()
   private var line = 1
   private var column = 0
   private var nextToken: Token = _
@@ -55,26 +58,55 @@ class Lexer(r: PushbackReader) {
       case '*' => Token(TokenKind.And, pos, "*")
       case '(' => Token(TokenKind.LeftParen, pos, "(")
       case ')' => Token(TokenKind.RightParen, pos, ")")
-      case c => Token(TokenKind.Input, pos, readName(c.toChar))
+      case c if c.toChar.isLetter => Token(TokenKind.Input, pos, readName(c.toChar))
+      case c =>
+        val (line, column) = pos
+        val s = prettyContext(pos)
+  
+        throw new IllegalArgumentException(s"Unexpected character ${c.toChar} at line $line, column $column\n\n$s")
     }
   }
   
-  private def pos: (Int, Int) = (line, column)
+  def context(pos: (Int, Int), around: Int = 5, readAfter: Boolean = true): (String, Int, Int) = {
+    val (line, column) = pos
+    if(line == this.line && readAfter) {
+      //skip to next line or eof (fill line buffer for context in the error message)
+      val l = line
+      while(this.line == l && read() != -1) {}
+    }
+    val buffer = lineBuffer(line)
+    val before = math.min(column - 1, around)
+    val after = math.min(buffer.length - column, around)
+    (buffer.substring(math.max(column - around - 1, 0), math.min(column + around, buffer.length)), before, after)
+  }
+  
+  def prettyContext(pos: (Int, Int), around: Int = 5, readAfter: Boolean = true): String = {
+    val (ctx, before, _) = context(pos)
+    ctx + "\n" + (" " * before) + "^"
+  }
+  
+  def pos: (Int, Int) = (line, column)
   
   private def readName(c: Char): String = {
     val sb = new StringBuilder().append(c)
-    var ch = read()
+    var ch = read(skipWhitespace = false)
     while(ch != -1 && ch.toChar.isLetterOrDigit) {
       sb.append(ch.toChar)
-      ch = read()
+      ch = read(skipWhitespace = false)
     }
     if(ch != -1) {
-      r.unread(ch)
+      unread(ch)
     }
     sb.toString()
   }
   
-  private def read(): Int = {
+  private def unread(ch: Int): Unit = {
+    column -= 1
+    lineBuffer().length -= 1
+    r.unread(ch)
+  }
+  
+  private def read(skipWhitespace: Boolean = true): Int = {
     while(true) {
       val c = r.read()
       if(c == -1) {
@@ -82,10 +114,14 @@ class Lexer(r: PushbackReader) {
       }
       c.toChar match {
         case '\n' => line += 1; column = 0
-        case ch if ch.isWhitespace => column += 1
-        case ch => column += 1; return ch
+        case ch if ch.isWhitespace && skipWhitespace => column += 1; lineBuffer() += ch
+        case ch => column += 1; lineBuffer() += ch; return ch
       }
     }
     throw new AssertionError()
+  }
+  
+  private def lineBuffer(line: Int = this.line): mutable.StringBuilder = {
+    lineMap.getOrElseUpdate(line, new StringBuilder())
   }
 }

@@ -4,12 +4,21 @@
         <title>Boolean Algebra</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="charset" content="utf-8">
+        <style>
+            .node, .reason {
+                display: inline-block;
+            }
+
+            .selected {
+                background-color: red;
+            }
+        </style>
     </head>
     <body>
         <label for="input">Expression:</label>
         <input type="text" id="input">
         <button id="button">Simplify</button>
-        <div id="status"></div>
+        <pre><code id="status"></code></pre>
         <div id="entries"></div>
         <script>
             function span(text) {
@@ -73,11 +82,34 @@
                 return v;
             }
 
+            function createReason(s) {
+                const v = document.createElement("div");
+                v.classList.add("reason");
+                v.setAttribute("name", s);
+                v.appendChild(span(s));
+                v.ontouchstart = v.onmouseover = function(e) {
+                    e.stopPropagation();
+                    document.querySelectorAll(".reason").forEach(n => {
+                        if(n.getAttribute("name") === s) {
+                            n.classList.add("selected")
+                        }
+                    })
+                };
+                v.ontouchend = v.onmouseout = function() {
+                    document.querySelectorAll(".reason").forEach(n => {
+                        n.classList.remove("selected")
+                    })
+                };
+                return v;
+            }
+
             function nodeWithText(...parts) {
                 const v = document.createElement("div");
                 for(const part of parts) {
                     if(typeof part === "string") {
                         v.appendChild(span(part));
+                    } else if(part instanceof HTMLElement) {
+                        v.appendChild(part);
                     } else {
                         v.appendChild(createNode(part));
                     }
@@ -86,10 +118,10 @@
             }
 
             function createStep({from, to, reason}) {
-                return nodeWithText("From ", from, " to ", to, " by " + reason)
+                return nodeWithText("From ", from, " to ", to, " by ", createReason(reason))
             }
 
-            document.getElementById("button").onclick = function() {
+            function simplify() {
                 const params = new URLSearchParams();
                 params.append("expression", document.getElementById("input").value);
                 fetch("/simplify?" + params.toString()).then(r => r.json()).then(data => {
@@ -105,17 +137,23 @@
                     target.appendChild(nodeWithText("Start = ", data.start));
                     data.steps.forEach(step => target.appendChild(createStep(step)));
                     target.appendChild(nodeWithText("End = ", data.end));
-                }).catch(e => document.getElementById("status").innerText = e)
-            }
-        </script>
-        <style>
-            .node {
-                display: inline-block;
+                }).catch(e => {
+                    document.getElementById("status").innerText = e;
+                    const target = document.getElementById("entries");
+                    while(target.firstChild) {
+                        target.removeChild(target.firstChild);
+                    }
+                })
             }
 
-            .selected {
-                background-color: red;
-            }
-        </style>
+            document.getElementById("input").onkeydown = function(e) {
+                //enter
+                if(e.keyCode === 13) {
+                    simplify();
+                }
+            };
+
+            document.getElementById("button").onclick = simplify;
+        </script>
     </body>
 </html>

@@ -15,7 +15,7 @@ class OrNode(var id: Int, val values: Seq[Node]) extends Node {
       case n => Some(n)
     }.distinct
     if(v != values && !nested) {
-      return context.addStep(this, "Member simplification", context.or(v)).simplify(context, nested = true)
+      return context.addStep(this, "Member flattening", context.or(v)).simplify(context, nested = true)
     }
     if(v.exists(_.eval.exists(identity))) {
       return context.addStep(this, "One or more inputs are true", context.constant(true))

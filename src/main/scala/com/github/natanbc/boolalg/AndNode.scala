@@ -15,7 +15,7 @@ class AndNode(var id: Int, val values: Seq[Node]) extends Node {
       case n => Some(n)
     }.distinct
     if(v != values) {
-      return context.addStep(this, "Member simplification", context.and(v)).simplify(context, nested = true)
+      return context.addStep(this, "Member flattening", context.and(v)).simplify(context, nested = true)
     }
     if(v.forall(_.eval.exists(identity))) {
       return context.addStep(this, "All inputs are true", context.constant(true))

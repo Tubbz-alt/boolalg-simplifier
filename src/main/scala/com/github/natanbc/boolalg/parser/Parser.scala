@@ -18,14 +18,21 @@ class Parser(source: String) {
   register(TokenKind.Or, Parselets.Or)
   register(TokenKind.And, Parselets.And)
   
-  def parseExpression(ctx: SimplificationContext): Node = parseExpression(ctx, 0)
+  def parseExpression(ctx: SimplificationContext): Node = {
+    val v = parseExpression(ctx, 0)
+    consume(TokenKind.Eof)
+    v
+  }
   
-  //returns null on eof
   def parseExpression(ctx: SimplificationContext, precedence: Int): Node = {
     var t = lexer.next()
-    if(t.kind == TokenKind.Eof) return null
+    if(t.kind == TokenKind.Eof) {
+      throw new IllegalArgumentException(s"Expression expected, got EOF\n${lexer.prettyContext(lexer.pos)}")
+    }
     val prefix = prefixParselets.getOrElse(t.kind, null)
-    if(prefix == null) throw new IllegalArgumentException(s"No prefix parselet for ${t.kind}")
+    if(prefix == null) {
+      throw new IllegalArgumentException(s"No prefix parselet for ${t.kind}\n${lexer.prettyContext(lexer.pos)}")
+    }
     
     var left = prefix.parse(ctx, this, t)
     
@@ -47,7 +54,9 @@ class Parser(source: String) {
   
   def matches(kind: TokenKind, throwOnEof: Boolean = true): Boolean = {
     val a = peek().kind
-    if(throwOnEof && a == TokenKind.Eof) throw new IllegalStateException("unexpected eof")
+    if(throwOnEof && a == TokenKind.Eof) {
+      throw new IllegalStateException(s"Unexpected EOF\n${lexer.prettyContext(lexer.pos)}")
+    }
     val v = a == kind
     if(v) lexer.next()
     v
@@ -61,7 +70,10 @@ class Parser(source: String) {
   
   def consume(kind: TokenKind): Token = {
     val t = lexer.next()
-    t.expect(kind)
+    if(kind != t.kind) {
+      throw new IllegalArgumentException(s"Expected token of type $kind, got ${t.kind} (${t.value}) " +
+        s"at line ${t.pos._1}, column ${t.pos._2}\n${lexer.prettyContext(t.pos)}")
+    }
     t
   }
   

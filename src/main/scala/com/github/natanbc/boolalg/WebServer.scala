@@ -1,5 +1,6 @@
 package com.github.natanbc.boolalg
 
+import java.io.File
 import java.util.logging.LogManager
 
 import akka.actor.ActorSystem
@@ -18,10 +19,23 @@ import scala.util.Success
 object WebServer extends LazyLogging {
   def main(args: Array[String]) {
     configureLogging()
-    
-    val config = ConfigFactory.systemEnvironment()
+  
+    var config = ConfigFactory.systemEnvironment()
       .withFallback(ConfigFactory.load())
-    val index = Source.fromResource("index.html").mkString
+    if(new File("config.conf").exists()) {
+      config = ConfigFactory.parseFile(new File("config.conf"))
+          .withFallback(config)
+    }
+    val index = if(new File("index.html").exists()) {
+      val source = Source.fromFile("index.html")
+      try {
+        source.mkString
+      } finally {
+        source.close()
+      }
+    } else {
+      Source.fromResource("index.html").mkString
+    }
     implicit val system = ActorSystem("system", config)
     implicit val materializer = ActorMaterializer()
     implicit val dispatcher = system.dispatcher
@@ -57,7 +71,7 @@ object WebServer extends LazyLogging {
                   complete(HttpResponse(
                     status = StatusCodes.BadRequest,
                     entity = HttpEntity(ContentTypes.`application/json`, JsObject(
-                      "error" -> JsString(e.getMessage)
+                      "error" -> JsString(if(e.getMessage != null) e.getMessage else e.toString)
                     ).toString())
                   ))
                 }
