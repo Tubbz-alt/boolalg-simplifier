@@ -67,7 +67,11 @@ class Lexer(r: PushbackReader) {
     }
   }
   
-  def context(pos: (Int, Int), around: Int = 5, readAfter: Boolean = true): (String, Int, Int) = {
+  def contextFor(target: Token, around: Int = 5, readAfter: Boolean = true): (String, Int, Int) = {
+    context(target.pos, target.value.length, around, readAfter)
+  }
+  
+  def context(pos: (Int, Int), length: Int = 1, around: Int = 5, readAfter: Boolean = true): (String, Int, Int) = {
     val (line, column) = pos
     if(line == this.line && readAfter) {
       //skip to next line or eof (fill line buffer for context in the error message)
@@ -76,13 +80,17 @@ class Lexer(r: PushbackReader) {
     }
     val buffer = lineBuffer(line)
     val before = math.min(column - 1, around)
-    val after = math.min(buffer.length - column, around)
-    (buffer.substring(math.max(column - around - 1, 0), math.min(column + around, buffer.length)), before, after)
+    val after = math.min(buffer.length - (column + length), around)
+    (buffer.substring(math.max(column - around - 1, 0), math.min(column + around + length - 1, buffer.length)), before, after)
   }
   
-  def prettyContext(pos: (Int, Int), around: Int = 5, readAfter: Boolean = true): String = {
-    val (ctx, before, _) = context(pos)
-    ctx + "\n" + (" " * before) + "^"
+  def prettyContextFor(target: Token, around: Int = 5, readAfter: Boolean = true): String = {
+    prettyContext(target.pos, target.value.length, around, readAfter)
+  }
+  
+  def prettyContext(pos: (Int, Int), length: Int = 1, around: Int = 5, readAfter: Boolean = true): String = {
+    val (ctx, before, _) = context(pos, length, around, readAfter)
+    ctx + "\n" + " " * before + (if(length > 1) "└" + "─" * (length - 2) + "┘" else "^")
   }
   
   def pos: (Int, Int) = (line, column)
