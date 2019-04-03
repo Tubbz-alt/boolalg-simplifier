@@ -12,14 +12,86 @@
             .selected {
                 background-color: red;
             }
+
+            .usage-header {
+                background-color: #eee;
+                color: #444;
+                padding: 18px;
+                width: 100%;
+                border: none;
+                text-align: left;
+                outline: none;
+                font-size: 15px;
+            }
+
+            .usage {
+                padding: 0 18px;
+                overflow: hidden;
+                background-color: #f1f1f1;
+            }
+
+            th, td {
+                padding-right: 30px;
+            }
+
+            pre {
+                font-size: 15px;
+            }
+
+            .spacer {
+                margin-top: 20px;
+            }
+
+            .github-buttons {
+                display: block;
+            }
         </style>
+        <script async defer src="https://buttons.github.io/buttons.js"></script>
     </head>
     <body>
-        <label for="input">Expression:</label>
-        <input type="text" id="input">
-        <button id="button">Simplify</button>
-        <pre><code id="status"></code></pre>
-        <div id="entries"></div>
+        <div>
+            <div class="first-row">
+                <label for="input">Expression:</label>
+                <input type="text" id="input">
+                <button id="button-submit" disabled>Simplify</button>
+            </div>
+            <pre><code id="status"></code></pre>
+            <div id="entries"></div>
+            <div class="spacer"></div>
+            <div class="github-buttons">
+                <a class="github-button" href="https://github.com/natanbc/boolalg-simplifier" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star natanbc/boolalg-simplifier on GitHub">Star</a>
+                <a class="github-button" href="https://github.com/natanbc/boolalg-simplifier/issues" data-icon="octicon-issue-opened" data-size="large" data-show-count="true" aria-label="Issue natanbc/boolalg-simplifier on GitHub">Issue</a>
+            </div>
+            <div class="spacer"></div>
+            <div class="usage-header">Usage</div>
+            <div class="usage hidden">
+                <table>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Syntax</th>
+                    </tr>
+                    <tr>
+                        <td>NOT</td>
+                        <td>!X, ~X</td>
+                    </tr>
+                    <tr>
+                        <td>OR</td>
+                        <td>+</td>
+                    </tr>
+                    <tr>
+                        <td>AND</td>
+                        <td>*</td>
+                    </tr>
+                </table>
+                <p>The NOT operator applies only to the expression immediately after it.</p>
+                <p>Expressions may be surrounded with () to create a single expression</p>
+                <p>Examples:</p>
+                <pre><code style="text-decoration: overline;">A</code><code> = !A</code></pre>
+                <pre><code>AB</code><code> = A * B</code></pre>
+                <pre><code style="text-decoration: overline;">AB</code><code> = !(A * B)</code></pre>
+                <pre><code style="text-decoration: overline; text-decoration-style: double;">AB</code><code> = !!(A * B)</code></pre>
+            </div>
+        </div>
         <script>
             function span(text) {
                 const v = document.createElement("span");
@@ -146,14 +218,25 @@
                 })
             }
 
-            document.getElementById("input").onkeydown = function(e) {
+            const input = document.getElementById("input");
+            const button = document.getElementById("button-submit");
+
+            input.onkeydown = function(e) {
                 //enter
                 if(e.keyCode === 13) {
                     simplify();
                 }
             };
 
-            document.getElementById("button").onclick = simplify;
+            input.oninput = function() {
+                if(input.value.trim() !== "") {
+                    button.removeAttribute("disabled");
+                } else {
+                    button.setAttribute("disabled", "");
+                }
+            };
+
+            button.onclick = simplify;
         </script>
     </body>
 </html>
