@@ -84,7 +84,7 @@
                     </tr>
                 </table>
                 <p>The NOT operator applies only to the expression immediately after it.</p>
-                <p>Expressions may be surrounded with () to create a single expression</p>
+                <p>Expressions may be surrounded with () to create a single expression.</p>
                 <p>Examples:</p>
                 <pre><code style="text-decoration: overline;">A</code><code> = !A</code></pre>
                 <pre><code>AB</code><code> = A * B</code></pre>
@@ -196,26 +196,36 @@
             function simplify() {
                 const params = new URLSearchParams();
                 params.append("expression", document.getElementById("input").value);
-                fetch("/simplify?" + params.toString()).then(r => r.json()).then(data => {
-                    console.log(data);
-                    if(data.error) {
-                        throw new Error(data.error);
-                    }
-                    document.getElementById("status").innerText = "";
-                    const target = document.getElementById("entries");
-                    while(target.firstChild) {
-                        target.removeChild(target.firstChild);
-                    }
-                    target.appendChild(nodeWithText("Start = ", data.start));
-                    data.steps.forEach(step => target.appendChild(createStep(step)));
-                    target.appendChild(nodeWithText("End = ", data.end));
-                }).catch(e => {
-                    document.getElementById("status").innerText = e;
-                    const target = document.getElementById("entries");
-                    while(target.firstChild) {
-                        target.removeChild(target.firstChild);
-                    }
-                })
+                fetch("/simplify?" + params.toString())
+                    .then(r => {
+                        if(r.status === 414) {
+                            throw new Error("Expression too large!")
+                        }
+                        return r;
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(data);
+                        if(data.error) {
+                            throw new Error(data.error);
+                        }
+                        document.getElementById("status").innerText = "";
+                        const target = document.getElementById("entries");
+                        while(target.firstChild) {
+                            target.removeChild(target.firstChild);
+                        }
+                        target.appendChild(nodeWithText("Start = ", data.start));
+                        data.steps.forEach(step => target.appendChild(createStep(step)));
+                        target.appendChild(nodeWithText("End = ", data.end));
+                    }).catch(e => {
+                        console.log(e);
+                        console.log(e.stack);
+                        document.getElementById("status").innerText = e.message;
+                        const target = document.getElementById("entries");
+                        while(target.firstChild) {
+                            target.removeChild(target.firstChild);
+                        }
+                    })
             }
 
             const input = document.getElementById("input");

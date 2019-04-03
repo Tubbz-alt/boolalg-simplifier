@@ -48,14 +48,14 @@ object WebServer extends LazyLogging {
         } ~
         path("simplify") {
           parameter('expression) { expression =>
-            val context = new SimplificationContext()
-            try {
-              val parser = new Parser(expression)
-              val node = parser.parseExpression(context)
-              //error if there were multiple expressions
-              parser.consume(TokenKind.Eof)
-              val res = node.simplify(context)
-              respondWithHeaders(headers.RawHeader("Access-Control-Allow-Origin", "*")) {
+            respondWithHeaders(headers.RawHeader("Access-Control-Allow-Origin", "*")) {
+              val context = new SimplificationContext()
+              try {
+                val parser = new Parser(expression)
+                val node = parser.parseExpression(context)
+                //error if there were multiple expressions
+                parser.consume(TokenKind.Eof)
+                val res = node.simplify(context)
                 complete(HttpEntity(ContentTypes.`application/json`, JsObject(
                   "start" -> node.toJson,
                   "end" -> res.toJson,
@@ -67,17 +67,15 @@ object WebServer extends LazyLogging {
                     )
                   }: _*)
                 ).toString()))
-              }
-            } catch {
-              case e: Exception =>
-                respondWithHeaders(headers.RawHeader("Access-Control-Allow-Origin", "*")) {
+              } catch {
+                case e: Exception =>
                   complete(HttpResponse(
                     status = StatusCodes.BadRequest,
                     entity = HttpEntity(ContentTypes.`application/json`, JsObject(
                       "error" -> JsString(if(e.getMessage != null) e.getMessage else e.toString)
                     ).toString())
                   ))
-                }
+              }
             }
           }
         }
