@@ -8,7 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ headers, _ }
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import com.github.natanbc.boolalg.parser.Parser
+import com.github.natanbc.boolalg.parser.{ Parser, TokenKind }
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import spray.json.{ JsArray, JsObject, JsString }
@@ -50,7 +50,10 @@ object WebServer extends LazyLogging {
           parameter('expression) { expression =>
             val context = new SimplificationContext()
             try {
-              val node = new Parser(expression).parseExpression(context)
+              val parser = new Parser(expression)
+              val node = parser.parseExpression(context)
+              //error if there were multiple expressions
+              parser.consume(TokenKind.Eof)
               val res = node.simplify(context)
               respondWithHeaders(headers.RawHeader("Access-Control-Allow-Origin", "*")) {
                 complete(HttpEntity(ContentTypes.`application/json`, JsObject(

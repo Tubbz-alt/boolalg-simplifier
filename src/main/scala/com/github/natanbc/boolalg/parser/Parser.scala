@@ -18,11 +18,7 @@ class Parser(source: String) {
   register(TokenKind.Or, Parselets.Or)
   register(TokenKind.And, Parselets.And)
   
-  def parseExpression(ctx: SimplificationContext): Node = {
-    val v = parseExpression(ctx, 0)
-    consume(TokenKind.Eof)
-    v
-  }
+  def parseExpression(ctx: SimplificationContext): Node = parseExpression(ctx, 0)
   
   def parseExpression(ctx: SimplificationContext, precedence: Int): Node = {
     var t = lexer.next()
